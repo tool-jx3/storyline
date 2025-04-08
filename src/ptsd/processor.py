@@ -120,9 +120,10 @@ class ContextHandler:
 
 
 class TranslationMerger:
-    def __init__(self, client: APIClient, root_dir: AnyioPath) -> None:
+    def __init__(self, client: APIClient, root_dir: AnyioPath, target_dir: str) -> None:
         self.client = client
         self.root_dir = root_dir
+        self.target_dir = self.root_dir / target_dir
 
     def __apply_translations(self, data: dict, translations: list[dict]) -> None:
         for item in translations:
@@ -145,8 +146,9 @@ class TranslationMerger:
         self,
         file: ProjectFile,
     ) -> None:
-        raw_path = self.root_dir / "kr" / f"KR_{file.name}"
-        output_path = self.root_dir / "hant" / file.name
+        fake_path = AnyioPath(self.root_dir / "kr" / file.name)
+        raw_path = fake_path.parent / f"KR_{fake_path.name}"
+        output_path = self.target_dir / file.name
 
         if not (translations := await self.client.request("GET", f"/files/{file.id}/translation")):
             return
