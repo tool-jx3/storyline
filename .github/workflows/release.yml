@@ -67,6 +67,7 @@ jobs:
       - name: Clean existing tags
         env:
           RELEASE_TAG: ${{ steps.generate_metadata.outputs.tag }}
+        working-directory: main-repo
         run: |
           git fetch --tags
           if git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
@@ -77,6 +78,7 @@ jobs:
       - name: Create annotated tag
         env:
           RELEASE_TAG: ${{ steps.generate_metadata.outputs.tag }}
+        working-directory: main-repo
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
