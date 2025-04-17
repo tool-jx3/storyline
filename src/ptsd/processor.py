@@ -29,9 +29,6 @@ class ContextHandler:
             return
         updates = []
         for item in translations:
-            if item["stage"] not in (0, -1):
-                continue
-
             context_parts = []
             for lang in ("EN", "JP"):
                 lang_data = langs.get(lang)
