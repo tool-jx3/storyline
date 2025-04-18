@@ -13,6 +13,9 @@ env:
   # It must match the name in line 21 of the `src/ptsd/__init__.py` file.
   TARGET_DIR: "Hant"
 
+permissions:
+  contents: write # for repository-dispatch
+
 jobs:
   download_and_merge:
     runs-on: ubuntu-latest
@@ -98,3 +101,8 @@ jobs:
           files: ${{ env.TARGET_DIR }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          event-type: release-hant
