@@ -1,0 +1,68 @@
+# This file is part of ptsd project which is released under GNU GPL v3.0.
+# Copyright (c) 2025- Limbus Traditional Mandarin
+
+name: Release all in one zip
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [release-hant]
+
+jobs:
+  release_all_in_one:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Hant
+        uses: robinraju/release-downloader@v1
+        with:
+          repository: LimbusTraditionalMandarin/storyline
+          latest: true
+          tarBall: false
+          zipBall: false
+          fileName: 'Hant.zip'
+
+      - name: Download Font
+        uses: robinraju/release-downloader@v1
+        with:
+          repository: LimbusTraditionalMandarin/font
+          latest: true
+          tarBall: false
+          zipBall: false
+          fileName: 'SarasaGothicTC-Bold.ttf'
+
+      - name: Generate release metadata
+        id: generate_metadata
+        run: |
+          TAG=$(date +%s)
+          RELEASE_DATE=$(date -u +%Y-%m-%d)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "release_date=$RELEASE_DATE" >> $GITHUB_OUTPUT
+
+      - name: Make release zip
+        run: |
+          mkdir -p LimbusCompany_Data/Lang/hant-LTM
+          mkdir -p LimbusCompany_Data/Lang/hant-LTM/Font/Title
+          mkdir -p LimbusCompany_Data/Lang/hant-LTM/Font/Context
+          unzip -o Hant.zip -d LimbusCompany_Data/Lang/hant-LTM/
+          cp SarasaGothicTC-Bold.ttf LimbusCompany_Data/Lang/hant-LTM/Font/Title/
+          cp SarasaGothicTC-Bold.ttf LimbusCompany_Data/Lang/hant-LTM/Font/Context/
+          echo '{"lang": "hant-LTM"}' > LimbusCompany_Data/Lang/config.json
+          zip -r "LTM_allinone_${{ steps.generate_metadata.outputs.tag }}.zip" LimbusCompany_Data
+
+      - name: Delete existing allinone release and tag
+        run: gh release delete allinone --cleanup-tag --yes || true
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: allinone
+          name: Release all in one ${{ steps.generate_metadata.outputs.release_date }}
+          body: |
+            - v${{ steps.generate_metadata.outputs.tag }} all in one update
+          draft: false
+          prerelease: true
+          files: LTM_allinone_${{ steps.generate_metadata.outputs.tag }}.zip
