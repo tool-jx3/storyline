@@ -57,7 +57,7 @@ async def save_json_file(data: dict, path: AnyioPath) -> None:
 def match_project_file(files: list[ProjectFile], target: str) -> ProjectFile | None:
     """Find a project file matching the target name."""
     return next(
-        (f for f in files if f.name.split("/")[-1] in target),
+        (f for f in files if f.name.split("/")[-1] == target.split("/")[-1].split("_", 1)[-1]),
         None,
     )
 
