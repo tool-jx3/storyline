@@ -14,6 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Delete existing allinone release and tag
+        run: gh release delete allinone --cleanup-tag --yes || true
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Download Hant
         uses: robinraju/release-downloader@v1
         with:
@@ -50,11 +55,6 @@ jobs:
           cp SarasaGothicTC-Bold.ttf LimbusCompany_Data/Lang/hant-LTM/Font/Context/
           echo '{"lang": "hant-LTM"}' > LimbusCompany_Data/Lang/config.json
           zip -r "LTM_allinone_${{ steps.generate_metadata.outputs.tag }}.zip" LimbusCompany_Data
-
-      - name: Delete existing allinone release and tag
-        run: gh release delete allinone --cleanup-tag --yes || true
-        env:
-          GH_TOKEN: ${{ github.token }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
