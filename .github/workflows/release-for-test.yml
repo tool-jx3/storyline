@@ -1,7 +1,7 @@
 # This file is part of ptsd project which is released under GNU GPL v3.0.
 # Copyright (c) 2025- Limbus Traditional Mandarin
 
-name: Synchronize and make testing localized storylines
+name: Make testing localized storylines
 
 on:
   workflow_dispatch:
@@ -37,6 +37,12 @@ jobs:
           ref: main
           path: main-repo
 
+      - name: Delete existing testing release and tag
+        run: gh release delete testing --cleanup-tag --yes || true
+        working-directory: main-repo
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
 
@@ -59,11 +65,24 @@ jobs:
         id: generate_metadata
         run: |
           TAG=$(date +%s)
+          RELEASE_DATE=$(date -u +%Y-%m-%d)
           echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "release_date=$RELEASE_DATE" >> $GITHUB_OUTPUT
 
-      - uses: actions/upload-artifact@v4
+      - name: Prepare release asset
+        working-directory: storyline/${{ env.TARGET_DIR }}
+        run: |
+          zip -r "../../${{ env.TARGET_DIR }}_TEMP_${{ steps.generate_metadata.outputs.tag }}.zip" .
+
+      - name: Create GitHub Prerlease
+        uses: softprops/action-gh-release@v1
         with:
-          name: ${{ env.TARGET_DIR }}_${{ steps.generate_metadata.outputs.tag }}
-          path: storyline/${{ env.TARGET_DIR }}
-          compression-level: 9
-          retention-days: 3
+          tag_name: testing
+          name: Testing ${{ steps.generate_metadata.outputs.release_date }}
+          body: |
+            - v${{ steps.generate_metadata.outputs.tag }} testing storyline update
+          files: ${{ env.TARGET_DIR }}_TEMP_${{ steps.generate_metadata.outputs.tag }}.zip
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
