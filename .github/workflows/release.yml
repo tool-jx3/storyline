@@ -4,8 +4,6 @@
 name: Synchronize and publish localized storylines
 
 on:
-  schedule:
-    - cron: "0 21 * * SAT"
   workflow_dispatch:
 
 env:
