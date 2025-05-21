@@ -3,6 +3,7 @@
 
 import json
 import logging
+import os
 
 from anyio import Path as AnyioPath
 
@@ -139,12 +140,36 @@ class TranslationMerger:
             except (KeyError, IndexError, ValueError) as e:
                 logger.error(f"Translation error at {item['key']}: {e!r}")
 
+    def __update_from_en(self, en_data, raw_data):
+        if isinstance(en_data, dict) and isinstance(raw_data, dict):
+            for key in raw_data:
+                if key in {"id", "model"}:
+                    continue
+                if key in en_data:
+                    raw_data[key] = self.__update_from_en(en_data[key], raw_data[key])
+            return raw_data
+
+        elif isinstance(en_data, list) and isinstance(raw_data, list):
+            updated_list = []
+            for i, kr_item in enumerate(raw_data):
+                if i < len(en_data):
+                    en_item = en_data[i]
+                    updated_item = self.__update_from_en(en_item, kr_item)
+                    updated_list.append(updated_item)
+                else:
+                    updated_list.append(kr_item)
+            return updated_list
+
+        else:
+            return en_data
+
     async def merge_translation(
         self,
         file: ProjectFile,
     ) -> None:
-        fake_path = AnyioPath(self.root_dir / "en" / file.name)
-        raw_path = fake_path.parent / f"EN_{fake_path.name}"
+        para_path = AnyioPath(file.name)
+        en_path = self.root_dir / "en" / para_path.parent / f"EN_{para_path.name}"
+        raw_path = self.root_dir / "kr" / para_path.parent / f"KR_{para_path.name}"
         output_path = self.target_dir / file.name
 
         if not (translations := await self.client.request("GET", f"/files/{file.id}/translation")):
@@ -152,6 +177,9 @@ class TranslationMerger:
 
         try:
             data = await load_json_file(raw_path)
+            if os.path.exists(en_path):
+                en_data = await load_json_file(en_path)
+                data = self.__update_from_en(en_data, data)
             self.__apply_translations(data, translations)
             await save_json_file(data, output_path)
             logger.info(f"Merged translations for {file.name}")
