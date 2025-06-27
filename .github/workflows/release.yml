@@ -89,13 +89,18 @@ jobs:
         run: |
           zip -r "../../${{ env.TARGET_DIR }}.zip" .
 
+      - name: Create ReleaseNotes
+        run: |
+          echo "- v${{ steps.generate_metadata.outputs.tag }} storyline update" >> ReleaseNotes.md
+          echo -e "\n---\n" >> ReleaseNotes.md
+          curl https://paratranz.cn/api/projects/14095/files/21952990/translation | jq -r '.[0].translation' >> ReleaseNotes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.generate_metadata.outputs.tag }}
           name: Release ${{ steps.generate_metadata.outputs.release_date }}
-          body: |
-            - v${{ steps.generate_metadata.outputs.tag }} storyline update
+          body_path: ReleaseNotes.md
           files: ${{ env.TARGET_DIR }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
